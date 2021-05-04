@@ -10,7 +10,6 @@
 
 library locally;
 
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -19,9 +18,6 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 /// Locally class created
 class Locally {
-  /// A key identifier property is needed
-  Key? key;
-
   /// A String title for Notification
   late String title;
 
@@ -50,7 +46,7 @@ class Locally {
   /// initializationSettingIos;
   /// initializationSetting;
   FlutterLocalNotificationsPlugin localNotificationsPlugin =
-  FlutterLocalNotificationsPlugin();
+      FlutterLocalNotificationsPlugin();
   var initializationSettingAndroid;
   var initializationSettingIos;
   var initializationSetting;
@@ -72,12 +68,11 @@ class Locally {
   }) {
     /// initializationSettingAndroid declared above is assigned
     /// to AndroidInitializationSettings.
-    initializationSettingAndroid =
-    new AndroidInitializationSettings(this.appIcon);
+    initializationSettingAndroid = AndroidInitializationSettings(this.appIcon);
 
     /// initializationSettingIos declared above is assigned
     /// to IOSInitializationSettings.
-    initializationSettingIos = new IOSInitializationSettings(
+    initializationSettingIos = IOSInitializationSettings(
         requestSoundPermission: iosRequestSoundPermission,
         requestBadgePermission: iosRequestBadgePermission,
         requestAlertPermission: iosRequestAlertPermission,
@@ -86,7 +81,7 @@ class Locally {
     /// initializationSetting declared above is here assigned
     /// to InitializationSetting, which comes from flutter_local_notification
     /// package.
-    initializationSetting = new InitializationSettings(
+    initializationSetting = InitializationSettings(
         android: initializationSettingAndroid, iOS: initializationSettingIos);
 
     /// localNotificationPlugin is initialized here finally
@@ -96,46 +91,48 @@ class Locally {
 
   /// requestPermission()
   /// for IOS developers only
-  Future requestPermission() async {
-    return await localNotificationsPlugin
+  Future<bool?>? requestPermission() {
+    return localNotificationsPlugin
         .resolvePlatformSpecificImplementation<
-        IOSFlutterLocalNotificationsPlugin>()
+            IOSFlutterLocalNotificationsPlugin>()
         ?.requestPermissions(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
+          alert: true,
+          badge: true,
+          sound: true,
+        );
   }
 
   /// onSelectNotification
   /// Obtains a string payload
   /// And perform navigation function
-  Future<dynamic> onSelectNotification(String? payload) async {
+  Future<dynamic> onSelectNotification(String? payload) {
     if (payload != null) {
       debugPrint('notification payload: ' + payload);
     }
-    await Navigator.push(context, pageRoute);
+    return Navigator.push(context, pageRoute);
   }
 
   /// onDidReceiveNotification
   /// it required for IOS initialization
   /// it takes in id, title, body and payload
-  Future<void> onDidReceiveNotification(id, title, body, payload) async {
-    await showDialog(
-        context: context,
-        builder:(_)=> CupertinoAlertDialog(
-          title: title,
-          content: Text(body),
-          actions: <Widget>[
-            CupertinoDialogAction(
-              isDefaultAction: true,
-              child: Text('Ok'),
-              onPressed: () async {
-                await Navigator.push(context, pageRoute);
-              },
-            )
-          ],
-        ));
+  Future<dynamic> onDidReceiveNotification(
+      int id, String? title, String? body, String? payload) {
+    return showDialog(
+      context: context,
+      builder: (_) => CupertinoAlertDialog(
+        title: title != null ? Text(title) : null,
+        content: body != null ? Text(body) : null,
+        actions: <Widget>[
+          CupertinoDialogAction(
+            isDefaultAction: true,
+            child: Text('Ok'),
+            onPressed: () async {
+              await Navigator.push(context, pageRoute);
+            },
+          )
+        ],
+      ),
+    );
   }
 
   /// The show Method return a notification to the screen
@@ -146,33 +143,32 @@ class Locally {
   /// importance,
   /// priority
   /// ticker
-  Future show(
-      {required title,
-        required message,
-        channelName = 'channel Name',
-        channelID = 'channelID',
-        channelDescription = 'channel Description',
-        importance = Importance.high,
-        priority = Priority.high,
-        ticker = 'test ticker'}) async {
-    if (title == null && message == null) {
-      throw "Missing parameters, title: message";
-    } else {
-      this.title = title;
-      this.message = message;
+  Future show({
+    int id = 0,
+    required String title,
+    required String message,
+    String channelName = 'channel Name',
+    String channelID = 'channelID',
+    String channelDescription = 'channel Description',
+    Importance importance = Importance.high,
+    Priority priority = Priority.high,
+    String ticker = 'test ticker',
+  }) {
+    this.title = title;
+    this.message = message;
 
-      var androidPlatformChannelSpecifics = AndroidNotificationDetails(
-          channelID, channelName, channelDescription,
-          importance: importance, priority: priority, ticker: ticker);
+    final androidPlatformChannelSpecifics = AndroidNotificationDetails(
+        channelID, channelName, channelDescription,
+        importance: importance, priority: priority, ticker: ticker);
 
-      var iosPlatformChannelSpecifics = IOSNotificationDetails();
+    final iosPlatformChannelSpecifics = IOSNotificationDetails();
 
-      var platformChannelSpecifics = NotificationDetails(
-          android : androidPlatformChannelSpecifics, iOS: iosPlatformChannelSpecifics);
+    final platformChannelSpecifics = NotificationDetails(
+        android: androidPlatformChannelSpecifics,
+        iOS: iosPlatformChannelSpecifics);
 
-      await localNotificationsPlugin
-          .show(0, title, message, platformChannelSpecifics, payload: payload);
-    }
+    return localNotificationsPlugin
+        .show(id, title, message, platformChannelSpecifics, payload: payload);
   }
 
   /// The scheduleMethod return  a notification to the screen
@@ -185,30 +181,29 @@ class Locally {
   /// priority
   /// ticker
   /// and a Duration class
-  Future schedule(
-      {required title,
-        required message,
-        channelName = 'channel Name',
-        channelID = 'channelID',
-        channelDescription = 'channel Description',
-        importance = Importance.high,
-        priority = Priority.high,
-        ticker = 'test ticker',
-        required Duration duration,
-        androidAllowWhileIdle = false}) async {
-    if (title == null && message == null && duration == null) {
-      throw "Missing parameters, title: message: duration";
-    } else {
-      var scheduledNotificationDateTime = DateTime.now().add(duration);
+  Future<void> schedule({
+    int id = 0,
+    required String title,
+    required String message,
+    String channelName = 'channel Name',
+    String channelID = 'channelID',
+    String channelDescription = 'channel Description',
+    Importance importance = Importance.high,
+    Priority priority = Priority.high,
+    String ticker = 'test ticker',
+    required Duration duration,
+    bool androidAllowWhileIdle = false,
+  }) {
+    final scheduledNotificationDateTime = DateTime.now().add(duration);
 
-      var androidPlatformChannelSpecifics = AndroidNotificationDetails(
-          channelID, channelName, channelDescription);
-      var iOSPlatformChannelSpecifics = IOSNotificationDetails();
-      NotificationDetails platformChannelSpecifics = NotificationDetails(
-          android: androidPlatformChannelSpecifics, iOS: iOSPlatformChannelSpecifics);
-      await localNotificationsPlugin.schedule(0, title, message,
-          scheduledNotificationDateTime, platformChannelSpecifics);
-    }
+    final androidPlatformChannelSpecifics =
+        AndroidNotificationDetails(channelID, channelName, channelDescription);
+    final iOSPlatformChannelSpecifics = IOSNotificationDetails();
+    final platformChannelSpecifics = NotificationDetails(
+        android: androidPlatformChannelSpecifics,
+        iOS: iOSPlatformChannelSpecifics);
+    return localNotificationsPlugin.schedule(id, title, message,
+        scheduledNotificationDateTime, platformChannelSpecifics);
   }
 
   /// The showPeriodicallyd return  a notification to the screen
@@ -221,27 +216,26 @@ class Locally {
   /// priority
   /// ticker
   /// and a repeat interval
-  Future showPeriodically(
-      {required title,
-        required message,
-        channelName = 'channel Name',
-        channelID = 'channelID',
-        channelDescription = 'channel Description',
-        importance = Importance.high,
-        priority = Priority.high,
-        required var repeatInterval,
-        ticker = 'test ticker'}) async {
-    if (title == null && message == null && repeatInterval == null) {
-      throw "Missing parameters, title: message, repeat interval";
-    } else {
-      var androidPlatformChannelSpecifics = AndroidNotificationDetails(
-          channelID, channelName, channelDescription);
-      var iOSPlatformChannelSpecifics = IOSNotificationDetails();
-      var platformChannelSpecifics = NotificationDetails(
-          android : androidPlatformChannelSpecifics, iOS: iOSPlatformChannelSpecifics);
-      await localNotificationsPlugin.periodicallyShow(
-          0, title, message, repeatInterval, platformChannelSpecifics);
-    }
+  Future<void> showPeriodically({
+    int id = 0,
+    required String title,
+    required String message,
+    String channelName = 'channel Name',
+    String channelID = 'channelID',
+    String channelDescription = 'channel Description',
+    Importance importance = Importance.high,
+    Priority priority = Priority.high,
+    required RepeatInterval repeatInterval,
+    String ticker = 'test ticker',
+  }) {
+    final androidPlatformChannelSpecifics =
+        AndroidNotificationDetails(channelID, channelName, channelDescription);
+    final iOSPlatformChannelSpecifics = IOSNotificationDetails();
+    final platformChannelSpecifics = NotificationDetails(
+        android: androidPlatformChannelSpecifics,
+        iOS: iOSPlatformChannelSpecifics);
+    return localNotificationsPlugin.periodicallyShow(
+        id, title, message, repeatInterval, platformChannelSpecifics);
   }
 
   /// The showDailyAtTime return a notification to the screen
@@ -254,37 +248,36 @@ class Locally {
   /// priority
   /// ticker
   /// and a time
-  Future showDailyAtTime(
-      {required title,
-        required message,
-        channelName = 'channel Name',
-        channelID = 'channelID',
-        channelDescription = 'channel Description',
-        importance = Importance.high,
-        priority = Priority.high,
-        ticker = 'test ticker',
-        required time,
-        bool suffixTime = false}) async {
-    if (title == null && message == null) {
-      throw "Missing parameters, title: message";
+  Future<void> showDailyAtTime({
+    int id = 0,
+    required String title,
+    required String message,
+    String channelName = 'channel Name',
+    String channelID = 'channelID',
+    String channelDescription = 'channel Description',
+    Importance importance = Importance.high,
+    Priority priority = Priority.high,
+    String ticker = 'test ticker',
+    required Time time,
+    bool suffixTime = false,
+  }) {
+    final androidPlatformChannelSpecifics =
+        AndroidNotificationDetails(channelID, channelName, channelDescription);
+    final iOSPlatformChannelSpecifics = IOSNotificationDetails();
+    final platformChannelSpecifics = NotificationDetails(
+        android: androidPlatformChannelSpecifics,
+        iOS: iOSPlatformChannelSpecifics);
+    if (suffixTime) {
+      return localNotificationsPlugin.showDailyAtTime(
+          id,
+          title,
+          message +
+              "${time.hour.toString()}:${time.minute.toString()}:${time.second.toString()}",
+          time,
+          platformChannelSpecifics);
     } else {
-      var androidPlatformChannelSpecifics = AndroidNotificationDetails(
-          channelID, channelName, channelDescription);
-      var iOSPlatformChannelSpecifics = IOSNotificationDetails();
-      var platformChannelSpecifics = NotificationDetails(
-          android: androidPlatformChannelSpecifics, iOS: iOSPlatformChannelSpecifics);
-      if (suffixTime) {
-        await localNotificationsPlugin.showDailyAtTime(
-            0,
-            title,
-            message +
-                "${time.hour.toString()}:${time.minute.toString()}:${time.second.toString()}",
-            time,
-            platformChannelSpecifics);
-      } else {
-        await localNotificationsPlugin.showDailyAtTime(
-            0, title, message, time, platformChannelSpecifics);
-      }
+      return localNotificationsPlugin.showDailyAtTime(
+          id, title, message, time, platformChannelSpecifics);
     }
   }
 
@@ -300,71 +293,71 @@ class Locally {
   /// ticker
   /// and a time
   /// and Day
-  Future showWeeklyAtDayAndTime(
-      {required title,
-        required message,
-        channelName = 'channel Name',
-        channelID = 'channelID',
-        channelDescription = 'channel Description',
-        Importance importance = Importance.high,
-        Priority priority = Priority.high,
-        ticker = 'test ticker',
-        @required time,
-        @required day,
-        bool suffixTime = false}) async {
-    if (title == null && message == null && time == null && day == null) {
-      throw "Missing parameters, title: message : time";
-    } else {
-      var androidPlatformChannelSpecifics = AndroidNotificationDetails(
-          channelID, channelName, channelDescription);
-      var iOSPlatformChannelSpecifics = IOSNotificationDetails();
-      var platformChannelSpecifics = NotificationDetails(
-          android: androidPlatformChannelSpecifics, iOS: iOSPlatformChannelSpecifics);
-      if (suffixTime) {
-        await localNotificationsPlugin.showDailyAtTime(
-            0,
-            title,
-            message +
-                "${time.hour.toString()}:${time.minute.toString()}:${time.second.toString()}",
-            time,
-            platformChannelSpecifics);
-      } else {
-        await localNotificationsPlugin.showWeeklyAtDayAndTime(
-            0, title, message, day, time, platformChannelSpecifics);
-      }
+  Future showWeeklyAtDayAndTime({
+    int id = 0,
+    required String title,
+    required String message,
+    String channelName = 'channel Name',
+    String channelID = 'channelID',
+    String channelDescription = 'channel Description',
+    Importance importance = Importance.high,
+    Priority priority = Priority.high,
+    String ticker = 'test ticker',
+    required Time time,
+    required Day day,
+    bool suffixTime = false,
+  }) {
+    final androidPlatformChannelSpecifics =
+        AndroidNotificationDetails(channelID, channelName, channelDescription);
+    final iOSPlatformChannelSpecifics = IOSNotificationDetails();
+    final platformChannelSpecifics = NotificationDetails(
+        android: androidPlatformChannelSpecifics,
+        iOS: iOSPlatformChannelSpecifics);
+    if (suffixTime) {
+      return localNotificationsPlugin.showDailyAtTime(
+          id,
+          title,
+          message +
+              "${time.hour.toString()}:${time.minute.toString()}:${time.second.toString()}",
+          time,
+          platformChannelSpecifics);
     }
+
+    return localNotificationsPlugin.showWeeklyAtDayAndTime(
+        id, title, message, day, time, platformChannelSpecifics);
   }
 
   /// The retrievePendingNotifications return all pending
   /// notification to the screen
   ///
-  Future retrievePendingNotifications() async {
-    return await localNotificationsPlugin.pendingNotificationRequests();
+  Future<List<PendingNotificationRequest>> retrievePendingNotifications() {
+    return localNotificationsPlugin.pendingNotificationRequests();
   }
 
   /// The cancel method as the name goes
   /// cancels a with a provided index id
   ///
-  Future cancel(int index) async {
+  Future<void> cancel(int index) {
     if (index == null) {
       throw 'Error: index required';
     } else {
-      await localNotificationsPlugin.cancel(index);
+      return localNotificationsPlugin.cancel(index);
     }
   }
 
   /// The cancelAll method as the name goes
   /// cancels all pending notification
   ///
-  Future cancelAll() async {
-    localNotificationsPlugin.cancelAll();
+  Future<void> cancelAll() {
+    return localNotificationsPlugin.cancelAll();
   }
 
   /// The getDetailsIfAppWasLaunchedViaNotification
   /// return details if the app was lauched by a notification
   /// payload
   ///
-  Future getDetailsIfAppWasLaunchedViaNotification() async {
+  Future<NotificationAppLaunchDetails?>
+      getDetailsIfAppWasLaunchedViaNotification() {
     return localNotificationsPlugin.getNotificationAppLaunchDetails();
   }
 }
